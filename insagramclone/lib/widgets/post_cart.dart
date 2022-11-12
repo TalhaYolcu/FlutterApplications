@@ -1,7 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:insagramclone/models/user.dart';
 import 'package:insagramclone/providers/user_provider.dart';
+import 'package:insagramclone/resources/firestore_methods.dart';
+import 'package:insagramclone/screens/comments_screen.dart';
 import 'package:insagramclone/utils/colors.dart';
+import 'package:insagramclone/utils/utils.dart';
 import 'package:insagramclone/widgets/like_animation.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -16,10 +20,32 @@ class PostCard extends StatefulWidget {
 
 class _PostCardState extends State<PostCard> {
   bool isLikeAnimating = false;
+  int commentLen = 0;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    getComments();
+  }
+
+  void getComments() async {
+    try {
+      QuerySnapshot snap = await FirebaseFirestore.instance
+          .collection('posts')
+          .doc(widget.snap['postId'])
+          .collection('comments')
+          .get();
+      commentLen = snap.docs.length;
+    } catch (e) {
+      showSnackBar(e.toString(), context);
+    }
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
-    final User user = Provider.of<UserProvider>(context).getUser!;
+    final User user = Provider.of<UserProvider>(context).getUser;
     return Container(
       color: mobileBackgroundColor,
       padding: const EdgeInsets.symmetric(vertical: 10),
@@ -64,6 +90,11 @@ class _PostCardState extends State<PostCard> {
                                   'Delete',
                                 ]
                                     .map((e) => InkWell(
+                                          onTap: () async {
+                                            FirestoreMethods().deletePost(
+                                                widget.snap['postId']);
+                                            Navigator.of(context).pop();
+                                          },
                                           child: Container(
                                             padding: const EdgeInsets.symmetric(
                                                 vertical: 12, horizontal: 16),
@@ -81,7 +112,9 @@ class _PostCardState extends State<PostCard> {
           ),
           //image section
           GestureDetector(
-            onDoubleTap: () {
+            onDoubleTap: () async {
+              await FirestoreMethods().likePost(
+                  widget.snap['postId'], user.uid, widget.snap['likes']);
               setState(() {
                 isLikeAnimating = true;
               });
@@ -118,14 +151,22 @@ class _PostCardState extends State<PostCard> {
                 isAnimating: widget.snap['likes'].contains(user.uid),
                 smallLike: true,
                 child: IconButton(
-                    onPressed: () {},
-                    icon: const Icon(
-                      Icons.favorite,
-                      color: Colors.red,
-                    )),
+                    onPressed: () async {
+                      await FirestoreMethods().likePost(widget.snap['postId'],
+                          user.uid, widget.snap['likes']);
+                      setState(() {
+                        isLikeAnimating = true;
+                      });
+                    },
+                    icon: widget.snap['likes'].contains(user.uid)
+                        ? Icon(Icons.favorite, color: Colors.red)
+                        : Icon(Icons.favorite_border)),
               ),
               IconButton(
-                  onPressed: () {},
+                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => CommentScreen(
+                            snap: widget.snap,
+                          ))),
                   icon: const Icon(
                     Icons.comment_outlined,
                   )),
@@ -184,7 +225,7 @@ class _PostCardState extends State<PostCard> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Text(
-                      'View all 200 comments',
+                      'View all ${commentLen} comments',
                       style:
                           const TextStyle(fontSize: 16, color: secondaryColor),
                     ),

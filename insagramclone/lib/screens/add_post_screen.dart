@@ -27,6 +27,7 @@ class _AddPostState extends State<AddPost> {
   @override
   void dispose() {
     // TODO: implement dispose
+    super.dispose();
     _descriptionController.dispose();
   }
 
@@ -103,7 +104,7 @@ class _AddPostState extends State<AddPost> {
 
   @override
   Widget build(BuildContext context) {
-    final User user = Provider.of<UserProvider>(context).getUser!;
+    final User user = Provider.of<UserProvider>(context).getUser;
 
     return _file == null
         ? Center(
