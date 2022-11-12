@@ -64,8 +64,10 @@ class _SearchScreenState extends State<SearchScreen> {
                       child: ListTile(
                         leading: CircleAvatar(
                           backgroundImage: NetworkImage(
-                            (snapshot.data! as dynamic).docs[index]['photoUrl'],
-                          ),
+                              "https://petapixel.com/assets/uploads/2022/07/DALLEcopy.jpg"
+                              /*(snapshot.data! as dynamic).docs[index]
+                                  ['photoUrl']*/
+                              ),
                           radius: 16,
                         ),
                         title: Text(
